@@ -16,6 +16,7 @@ type Context struct {
 	// request info，提供对Method和Path这两个常用属性的直接访问
 	Path   string
 	Method string
+	Params map[string]string // 增加的属性，用来提供对路由参数的访问
 	// response info
 	StatusCode int
 }
@@ -28,6 +29,11 @@ func newContext(w http.ResponseWriter, req *http.Request) *Context {
 		Path:   req.URL.Path,
 		Method: req.Method, // 未设置状态码
 	}
+}
+
+func (c *Context) Param(key string) string {
+	value, _ := c.Params[key]
+	return value
 }
 
 // PostForm 提供访问PostForm参数的方法

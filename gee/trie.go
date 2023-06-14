@@ -74,3 +74,15 @@ func (n *node) search(parts []string, height int) *node {
 	}
 	return nil
 }
+
+// travel 用于遍历 trie 树上所有叶子节点
+// 接收一个指向节点切片的指针作为参数
+// 最终会将遍历得到的所有叶子节点找出存储在节点切片中返回给调用者
+func (n *node) travel(list *[]*node) {
+	if n.pattern != "" { // 遍历所有子节点，非空存入节点切片
+		*list = append(*list, n)
+	}
+	for _, child := range n.children {
+		child.travel(list) // 对当前节点的每个子节点进行递归调用，并将节点切片指针传入下一层级函数中
+	}
+}

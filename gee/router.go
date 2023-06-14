@@ -20,6 +20,7 @@ func newRouter() *router {
 }
 
 // parsePattern Only one * is allowed
+// 拆分返回字符串组
 func parsePattern(pattern string) []string {
 	vs := strings.Split(pattern, "/") // 使用 / 对字符串进行分割形成切片
 
@@ -51,10 +52,11 @@ func (r *router) addRoute(method string, pattern string, handler HandlerFunc) {
 // 用于查找指定HTTP方法和路径对应的路由节点
 func (r *router) getRoute(method string, path string) (*node, map[string]string) {
 	// 在Trie树上寻找对应的HTTP方法的根节点，如果没找到返回空
-	searchParts := parsePattern(path)
+	searchParts := parsePattern(path) // 得到需要搜索的内容
 	params := make(map[string]string)
 	root, ok := r.roots[method]
 
+	// 不存在
 	if !ok {
 		return nil, nil
 	}
@@ -73,9 +75,21 @@ func (r *router) getRoute(method string, path string) (*node, map[string]string)
 				break
 			}
 		}
+		// 存在，返回节点和参数
 		return n, params
 	}
 	return nil, nil
+}
+
+// 用于获取指定 HTTP 请求方法下的所有叶子节点，从路由器的根节点集合中取出对应请求方法的根节点
+func (r *router) getRoutes(method string) []*node {
+	root, ok := r.roots[method]
+	if !ok {
+		return nil
+	}
+	nodes := make([]*node, 0)
+	root.travel(&nodes)
+	return nodes
 }
 
 // handle 设置handle方法

@@ -19,6 +19,9 @@ type Context struct {
 	Params map[string]string // 增加的属性，用来提供对路由参数的访问
 	// response info
 	StatusCode int
+	// middleware
+	handlers []HandlerFunc
+	index    int
 }
 
 // newContext 构造方法
@@ -28,6 +31,16 @@ func newContext(w http.ResponseWriter, req *http.Request) *Context {
 		Req:    req,
 		Path:   req.URL.Path,
 		Method: req.Method, // 未设置状态码
+		index:  -1,         // 调用顺序，记录执行到第几个中间件
+	}
+}
+
+// Next 用于调用下一个中间件，调用完成后，执行本中间件Next()函数之后未执行的部分
+func (c *Context) Next() {
+	c.index++            // index 后移
+	s := len(c.handlers) // 长度
+	for ; c.index < s; c.index++ {
+		c.handlers[c.index](c) // 按index顺序调用方法
 	}
 }
 
@@ -39,6 +52,10 @@ func (c *Context) Param(key string) string {
 // PostForm 提供访问PostForm参数的方法
 func (c *Context) PostForm(key string) string {
 	return c.Req.FormValue(key)
+}
+func (c *Context) Fail(code int, err string) {
+	c.index = len(c.handlers)
+	c.JSON(code, H{"message": err})
 }
 
 // Query 提供访问Query参数的方法

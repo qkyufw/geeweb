@@ -3,6 +3,7 @@ package gee
 import (
 	"log"
 	"net/http"
+	"strings"
 )
 
 // HandlerFunc defines the request handler used by gee
@@ -32,8 +33,21 @@ type (
 // 解析请求的路径，查找路由映射表
 // 如果查到就执行注册的处理方法，查不到就返回404
 func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	var middlewares []HandlerFunc
+	for _, group := range engine.groups { // 判断请求适用于那些中间件，这里通过URL前缀盘点
+		if strings.HasPrefix(req.URL.Path, group.prefix) { // 得到中间件列表后复制给c.handler
+			middlewares = append(middlewares, group.middlewares...)
+		}
+	}
+
 	c := newContext(w, req)
+	c.handlers = middlewares
 	engine.router.handle(c)
+}
+
+// Use 给group添加中间件
+func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
+	group.middlewares = append(group.middlewares, middlewares...)
 }
 
 // New is the constructor of gee.Engine

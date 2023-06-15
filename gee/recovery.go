@@ -24,7 +24,7 @@ func trace(message string) string {
 	return str.String()
 }
 
-// Recovery 回复程序
+// Recovery 恢复程序
 func Recovery() HandlerFunc {
 	return func(c *Context) {
 		defer func() {

@@ -2,10 +2,11 @@ package lru
 
 import "container/list"
 
+// Cache is an LRU cache. It is not safe for concurrent access.
 type Cache struct {
 	maxBytes int64                    // cache允许的最大内存
 	nbytes   int64                    // cache当前已使用的内存
-	ll       *list.List               // go 标准库实现的双向链表
+	ll       *list.List               // go 标准库实现的双向链表，存放所有的值
 	cache    map[string]*list.Element // 字典，键为字符串，值为链表中对应的节点
 	// optional and executed when an entry is purged.
 	OnEvicted func(key string, value Value) // 某条记录被移除时的回调记录，可以为nil
@@ -19,18 +20,13 @@ type entry struct {
 	value Value
 }
 
-// Value use Len to count how many bytes it takes
-type Value interface {
-	Len() int // 用于返回值所占用的内存大小
-}
-
-// New is the Constructor of Cache
+// New is the Constructor of Cache，用于实例化
 func New(maxBytes int64, onEvicted func(string, Value)) *Cache {
 	return &Cache{
-		maxBytes:  maxBytes,
-		ll:        list.New(),
+		maxBytes:  maxBytes,   // 最大内存数设置为传入的数字
+		ll:        list.New(), // 新建一个双向链表
 		cache:     make(map[string]*list.Element),
-		OnEvicted: onEvicted,
+		OnEvicted: onEvicted, // 回调记录
 	}
 }
 
@@ -53,6 +49,7 @@ func (c *Cache) Add(key string, value Value) {
 }
 
 // Get look ups a key's value，查找功能
+// 节点背找到，则被使用，移动到最后去
 func (c *Cache) Get(key string) (value Value, ok bool) {
 	if ele, ok := c.cache[key]; ok { // 从字典中找到对应的双向链表的节点
 		c.ll.MoveToFront(ele) // 把该节点移动到队尾
@@ -77,6 +74,12 @@ func (c *Cache) RemoveOldest() {
 	}
 }
 
+// Len 用于获取添加了多少条数据
 func (c *Cache) Len() int {
 	return c.ll.Len()
+}
+
+// Value use Len to count how many bytes it takes
+type Value interface {
+	Len() int // 用于返回值所占用的内存大小
 }

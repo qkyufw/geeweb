@@ -5,6 +5,8 @@ import (
 	"sync"
 )
 
+// 实例化lru，封装get 和 add方法，添加互斥锁mu
+
 type cache struct {
 	mu         sync.Mutex // 添加并发特性
 	lru        *lru.Cache

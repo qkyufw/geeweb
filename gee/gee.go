@@ -84,7 +84,7 @@ func (group *RouterGroup) Group(prefix string) *RouterGroup {
 	return newGroup
 }
 
-// 添加路由方法，方法，pattern，handler函数
+// addRoute 添加路由方法，方法，pattern，handler函数
 // 这里的pattern可以理解为路由路径
 func (group *RouterGroup) addRoute(method string, comp string, handler HandlerFunc) {
 	pattern := group.prefix + comp

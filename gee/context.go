@@ -9,10 +9,23 @@ import (
 // H 给map[string]interface{} 取了一个别名，gee.H，构建JSON数据时会更简洁
 type H map[string]interface{}
 
+type responseWriter struct {
+	http.ResponseWriter
+	size   int
+	status int
+}
+
+func (w responseWriter) reset(writer http.ResponseWriter) {
+	w.ResponseWriter = writer
+	w.size = -1
+	w.status = http.StatusOK
+}
+
 type Context struct {
 	// origin objects，暂时只包括Writer和Req
-	Writer http.ResponseWriter
-	Req    *http.Request
+	writermem responseWriter // 增加的属性，用来提供对Writer的访问
+	Writer    http.ResponseWriter
+	Req       *http.Request
 	// request info，提供对Method和Path这两个常用属性的直接访问
 	Path   string
 	Method string
@@ -112,4 +125,12 @@ func (c *Context) HTML(code int, name string, data interface{}) {
 	if err := c.engine.htmlTemplates.ExecuteTemplate(c.Writer, name, data); err != nil {
 		c.Fail(500, err.Error())
 	}
+}
+
+func (c *Context) reset() {
+	c.Writer = &c.writermem
+	c.handlers = nil
+	c.index = -1
+
+	*c.params = (*c.params)[:0]
 }

@@ -6,7 +6,10 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"sync"
 )
+
+var maxParams uint8 = 255 // 最大参数数量 todo 应作为engine参数，动态更新，暂时设置为固定值
 
 // HandlerFunc defines the request handler used by gee
 // 请求handler，给用户使用，用来定义路由映射的处理方法
@@ -31,6 +34,7 @@ type (
 		groups        []*RouterGroup     // store all groups
 		htmlTemplates *template.Template // for html render，加载所有的模板
 		funcMap       template.FuncMap   // for html render，所有自定义函数和加载模板的方法
+		pool          sync.Pool          // context 对象池
 	}
 )
 
@@ -45,10 +49,16 @@ func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	c := newContext(w, req)
-	c.handlers = middlewares // 将中间件假如到handler中
+	c := engine.pool.Get().(*Context) // 从对象池中取出一个Context对象
+	c.writermem.reset(w)
+	c.Req = req
+	c.reset() // 重置
+
+	c.handlers = middlewares // 将中间件加入到handler中
 	c.engine = engine
 	engine.router.handle(c) // 找到该路由的Handler，添加入handlers
+
+	engine.pool.Put(c) // 将Context对象放回对象池
 }
 
 // Default 默认使用其中的两个中间件
@@ -69,7 +79,10 @@ func New() *Engine {
 	engine := &Engine{router: newRouter()}             // 初始化一个分组对象
 	engine.RouterGroup = &RouterGroup{engine: engine}  // 给组内绑定engine为本engine
 	engine.groups = []*RouterGroup{engine.RouterGroup} // 将该分组加入切片中
-	return engine                                      // 返回engine
+	engine.pool.New = func() any {
+		return engine.allocateContext(maxParams)
+	}
+	return engine // 返回engine
 }
 
 // Group 用于创建一个新的RouterGroup
@@ -137,4 +150,9 @@ func (engine *Engine) LoadHTMLGlob(pattern string) {
 // Run 运行，ListenAndServe 的包装
 func (engine *Engine) Run(addr string) (err error) {
 	return http.ListenAndServe(addr, engine)
+}
+
+func (engine *Engine) allocateContext(maxParams uint8) *Context {
+	v := make(Params, 0, maxParams)
+	return &Context{params: &v, engine: engine}
 }

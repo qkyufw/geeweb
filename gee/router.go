@@ -50,10 +50,10 @@ func (r *router) addRoute(method string, pattern string, handler HandlerFunc) {
 
 // getRoute method 为HTTP请求方法，path为URL路径
 // 用于查找指定HTTP方法和路径对应的路由节点
-func (r *router) getRoute(method string, path string) (*node, map[string]string) {
+func (r *router) getRoute(method string, path string) (*node, Params) {
 	// 在Trie树上寻找对应的HTTP方法的根节点，如果没找到返回空
 	searchParts := parsePattern(path) // 得到需要搜索的内容
-	params := make(map[string]string)
+	var params Params
 	root, ok := r.roots[method]
 
 	// 不存在
@@ -68,10 +68,10 @@ func (r *router) getRoute(method string, path string) (*node, map[string]string)
 		parts := parsePattern(n.pattern) // 解析路径模式和路径参数
 		for index, part := range parts { // 遍历路径模式和搜索路径切片
 			if part[0] == ':' { // 遇到冒号，存入params中
-				params[part[1:]] = searchParts[index]
+				params = append(params, Param{Key: part[1:], Value: searchParts[index]})
 			}
 			if part[0] == '*' && len(part) > 1 { // 遇到星号，匹配路径后的元素并存入字典
-				params[part[1:]] = strings.Join(searchParts[index:], "/")
+				params = append(params, Param{Key: part[1:], Value: strings.Join(searchParts[index:], "/")})
 				break
 			}
 		}
@@ -96,7 +96,7 @@ func (r *router) getRoutes(method string) []*node {
 func (r *router) handle(c *Context) {
 	n, params := r.getRoute(c.Method, c.Path)
 	if n != nil {
-		c.Params = params
+		c.params = &params
 		key := c.Method + "-" + n.pattern
 		// 将路由匹配得到的Handler添加到c.handlers列表中，执行c.Next()
 		c.handlers = append(c.handlers, r.handlers[key])

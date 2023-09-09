@@ -104,7 +104,7 @@ func (group *RouterGroup) POST(pattern string, handler HandlerFunc) {
 }
 
 // create static handler
-func (group RouterGroup) createStaticHandler(relativePath string, fs http.FileSystem) HandlerFunc {
+func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileSystem) HandlerFunc {
 	absolutePath := path.Join(group.prefix, relativePath) // 绝对路径
 	fileServer := http.StripPrefix(absolutePath, http.FileServer(fs))
 	return func(c *Context) {

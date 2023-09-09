@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	r := gee.New()
+	r := gee.Default()
 	r.GET("/", func(ctx *gee.Context) {
 		fmt.Fprintf(ctx.Writer, "URL.Path = %q\n", ctx.Req.URL.Path)
 	})
@@ -20,10 +20,6 @@ func main() {
 	r.GET("/:name", func(ctx *gee.Context) {
 		fmt.Fprintf(ctx.Writer, "Hi "+ctx.Param("name"))
 	})
-
-	group := r.Group("/group")
-	group.Use(gee.Logger())
-	r.Use(gee.Logger())
 
 	r.Run(":9999")
 }

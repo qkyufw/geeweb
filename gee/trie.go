@@ -9,6 +9,13 @@ type node struct {
 	isWild   bool    // 是否精确匹配，part 含有 : 或 * 为true
 }
 
+type Param struct {
+	Key   string
+	Value string
+}
+
+type Params []Param
+
 // matchChild 第一个匹配成功的节点，用于插入，只用于 insert
 // 用于在当前节点的子节点集合中查找与指定字符串 part 匹配的节点，
 // 并返回匹配到的第一个节点。如果没有匹配成功，则返回 nil

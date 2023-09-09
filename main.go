@@ -21,5 +21,9 @@ func main() {
 		fmt.Fprintf(ctx.Writer, "Hi "+ctx.Param("name"))
 	})
 
+	group := r.Group("/group")
+	group.Use(gee.Logger())
+	r.Use(gee.Logger())
+
 	r.Run(":9999")
 }

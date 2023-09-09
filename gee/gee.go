@@ -11,11 +11,12 @@ import (
 // HandlerFunc defines the request handler used by gee
 // 请求handler，给用户使用，用来定义路由映射的处理方法
 type HandlerFunc func(ctx *Context)
+type HandlersChain []HandlerFunc
 
 type (
 	RouterGroup struct {
 		prefix      string        // 前缀
-		middlewares []HandlerFunc // support middleware
+		middlewares HandlersChain // support middleware
 		parent      *RouterGroup  // support nesting，知道父分组，进行分组嵌套
 		engine      *Engine       // all groups share an Engine instance，需要有访问Router的能力，所以也指向一个Engine
 	}
@@ -37,7 +38,7 @@ type (
 // 解析请求的路径，查找路由映射表
 // 如果查到就执行注册的处理方法，查不到就返回404
 func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	var middlewares []HandlerFunc
+	var middlewares HandlersChain
 	for _, group := range engine.groups { // 判断请求适用于那些中间件，这里通过URL前缀盘点
 		if strings.HasPrefix(req.URL.Path, group.prefix) { // 得到中间件列表后复制给c.handler
 			middlewares = append(middlewares, group.middlewares...)

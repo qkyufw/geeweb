@@ -20,7 +20,7 @@ type Context struct {
 	// response info
 	StatusCode int
 	// middleware
-	handlers []HandlerFunc
+	handlers HandlersChain // 中间件列表
 	index    int
 	engine   *Engine
 }
